@@ -1,0 +1,7 @@
+C:/Users/vadim/source/repos/cocra/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+C:/Users/vadim/source/repos/cocra/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
+C:/Users/vadim/source/repos/cocra/out/build/x64-Debug/Parser/CMakeFiles/edit_cache.dir
+C:/Users/vadim/source/repos/cocra/out/build/x64-Debug/Parser/CMakeFiles/rebuild_cache.dir
+C:/Users/vadim/source/repos/cocra/out/build/x64-Debug/Parser/prj.parser/CMakeFiles/parser.dir
+C:/Users/vadim/source/repos/cocra/out/build/x64-Debug/Parser/prj.parser/CMakeFiles/edit_cache.dir
+C:/Users/vadim/source/repos/cocra/out/build/x64-Debug/Parser/prj.parser/CMakeFiles/rebuild_cache.dir
