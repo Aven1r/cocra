@@ -16,5 +16,6 @@ project(parsing)
 find_package(CURL REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(cpr CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 add_subdirectory(prj.parser)
