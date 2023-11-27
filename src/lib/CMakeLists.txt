@@ -1,0 +1,9 @@
+cmake_minimum_required(VERSION 3.20)
+project(cocra_parser CXX)
+
+add_library(${PROJECT_NAME} parser.cpp parser.hpp)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC CURL::libcurl)
+target_link_libraries(${PROJECT_NAME} PUBLIC cpr::cpr)
+target_link_libraries(${PROJECT_NAME} PUBLIC LibXml2::LibXml2)
+target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json)
