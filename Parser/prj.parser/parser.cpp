@@ -1,28 +1,51 @@
 ﻿#include <iostream>
 #include <fstream>
 #include <string>
+#include <algorithm>
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
 #include <libxml/HTMLparser.h>
 #include <filesystem>
 
+
+
+
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
-// Функция для извлечения текста из XML
-std::string ExtractTextFromNode(xmlNode* node, int indentLevel = 0) {
-    std::string text;
 
-    if (node->type == XML_TEXT_NODE) {
-        text += std::string(indentLevel, '\t') + (char*)node->content + "\n";
+// Функция для извлечения HTML
+std::string ExtractHtmlFromNode(xmlNode* node) {
+    std::string html;
+
+    xmlBufferPtr buffer = xmlBufferCreate();
+    if (buffer == nullptr) {
+        std::cerr << "Failed to create buffer" << std::endl;
+        return html;
     }
 
-    for (xmlNode* child = node->children; child; child = child->next) {
-        text += ExtractTextFromNode(child, indentLevel + 1);
+    xmlNodeDump(buffer, node->doc, node, 0, 0);
+
+    html = reinterpret_cast<char*>(buffer->content);
+    html.erase(html.begin(), std::find_if(html.begin(), html.end(), [](int ch) {
+        return !std::isspace(ch);
+        }));
+
+    size_t found = html.find("$$$");
+    while (found != std::string::npos) {
+        html.replace(found, 3, "$");
+        found = html.find("$$$", found + 1); // Search for the next occurrence
     }
 
-    return text;
+    xmlBufferFree(buffer);
+
+    return html;
 }
+
+
+
+
+
 
 // Рекурсивная функция для поиска узла с нужным классом
 xmlNode* FindNodeWithClass(xmlNode* node, const char* className) {
@@ -64,7 +87,7 @@ int main() {
         std::string problemId = problem["index"].dump();
         problemId.erase(remove(problemId.begin(), problemId.end(), '\"'), problemId.end());
         std::string folderPath = "problems/" + contestId + problemId;
-        std::string filePath = folderPath + "/" + contestId + problemId + ".md";
+        std::string filePath = folderPath + "/" + contestId + problemId + ".html";
         // Проверка на существование папки
         if (fs::exists(folderPath)) {
             std::cout << "Folder for problem " << contestId << problemId << " already exists. Skipping." << std::endl;
@@ -98,15 +121,16 @@ int main() {
 
         statementNode = FindNodeWithClass(rootNode, "problem-statement");
 
-        // Извлечение текста из узла условия задачи
-        std::string statementText;
+        // Извлечение HTML из узла условия задачи
+        std::string statementHTML;
         if (statementNode != nullptr) {
-            statementText = ExtractTextFromNode(statementNode);
+            statementHTML = ExtractHtmlFromNode(statementNode);
         }
         else {
             std::cerr << "Failed to find statement node for problem " << contestId << problemId << std::endl;
             continue;
         }
+        
 
         // Запись текста в файл
         std::ofstream outputFile(filePath);
@@ -115,7 +139,7 @@ int main() {
             continue;
         }
 
-        outputFile << statementText;
+        outputFile << statementHTML;;
 
         outputFile.close();
 
