@@ -401,3 +401,9 @@ FodyWeavers.xsd
 
 # Problems folder
 [Pp]roblems/
+
+# Build in any subfolder
+[Bb]uild
+
+# Visual Studio Code files
+.vscode
