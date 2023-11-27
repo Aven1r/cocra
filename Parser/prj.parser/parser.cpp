@@ -17,6 +17,16 @@ std::string ExtractTextFromNode(xmlNode* node, int indentLevel = 0) {
         text += std::string(indentLevel, '\t') + (char*)node->content + "\n";
     }
 
+    text.erase(text.begin(), std::find_if(text.begin(), text.end(), [](int ch) {
+        return !std::isspace(ch);
+        }));
+
+    size_t found = text.find("$$$");
+    while (found != std::string::npos) {
+        text.replace(found, 3, "$");
+        found = text.find("$$$", found + 1); // Search for the next occurrence
+    }
+
     for (xmlNode* child = node->children; child; child = child->next) {
         text += ExtractTextFromNode(child, indentLevel + 1);
     }
