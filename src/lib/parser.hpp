@@ -8,12 +8,16 @@
 #include <nlohmann/json.hpp>
 #include <libxml/HTMLparser.h>
 #include <filesystem>
+#include "html.hpp"
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
-std::string ExtractTextFromNode(xmlNode* node, int indentLevel = 0);
+std::string ExtractTextFromNode(xmlNode* node);
 
 xmlNode* FindNodeWithClass(xmlNode* node, const char* className);
 
+json GetJson();
+
+void parsing(const std::string& path_to_problems,const std::string& lang, json json_response);
 #endif

@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
 project(example)
+include(FetchContent)
+
+FetchContent_Declare(
+    htmlparser
+    GIT_REPOSITORY https://github.com/mylogin/htmlparser.git
+    GIT_TAG main
+)
+
+FetchContent_MakeAvailable(htmlparser)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake")
