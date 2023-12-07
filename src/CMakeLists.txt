@@ -1,14 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(example)
-include(FetchContent)
 
-FetchContent_Declare(
-    htmlparser
-    GIT_REPOSITORY https://github.com/mylogin/htmlparser.git
-    GIT_TAG main
-)
-
-FetchContent_MakeAvailable(htmlparser)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake")
@@ -29,6 +21,12 @@ FetchContent_Declare(
   GIT_TAG        5c1f476c96da77f1e3a2a6a7f9c6ddf8b5e50d6d
 )
 FetchContent_MakeAvailable(htmlparser)
+FetchContent_Declare(
+  html2md
+  GIT_REPOSITORY https://github.com/tim-gromeyer/html2md.git
+  GIT_TAG        main
+)
+FetchContent_MakeAvailable(html2md)
 
 find_package(CURL REQUIRED)
 find_package(LibXml2 REQUIRED)

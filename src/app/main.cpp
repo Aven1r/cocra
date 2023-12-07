@@ -14,5 +14,5 @@
 
 int main() {
     json json_response = GetJson();
-    parsing("C:/Users/vadim", "ru", json_response);
+    parsing("C:/Users", "ru", json_response);
 }

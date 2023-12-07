@@ -9,10 +9,10 @@ std::string ExtractTextFromNode(xmlNode* node) {
         std::cerr << "Failed to create buffer" << std::endl;
         return html;
     }
-
     xmlNodeDump(buffer, node->doc, node, 0, 0);
 
     html = reinterpret_cast<char*>(buffer->content);
+
 
     size_t found = html.find("$$$");
     while (found != std::string::npos) {
@@ -22,23 +22,60 @@ std::string ExtractTextFromNode(xmlNode* node) {
 
     xmlBufferFree(buffer);
 
-    std::string newHtml;
+
+    return html;
+}
+
+void processText(std::string& text) {
+    bool inLatex = false;
+    int flag = 0;
     size_t pos = 0;
-    while (pos < html.size()) {
-        if (html.compare(pos, 4, "</p>") == 0 || html.compare(pos, 6, "</div>") == 0) {
-            newHtml += html.substr(pos, (html.find('>', pos) - pos) + 1);
-            newHtml += '\n'; // Добавляем перенос строки
-            
-            pos += (html.find('>', pos) - pos) + 1;
+    while ((pos = text.find('[', pos)) != std::string::npos) {
+        if (pos > 0 && text[pos - 1] != ' ' && text[pos-1]!='!' && text[pos-1]!='$') {
+            text.insert(pos, " ");
+            pos++;
         }
-        else {
-            newHtml += html[pos];
-            ++pos;
+        pos++;
+    }
+   
+    
+   
+    
+    for (size_t i = 0; i < text.length();++i) {
+        if (text[i] == '$') {
+            inLatex = !inLatex;
+            continue;
+        }
+
+        if (inLatex) {
+            
+            if (text[i] == '\n') {
+                text.erase(i, 1);
+                --i;
+            }
+            else if (text[i] == '\\' && text[i + 1] == '\\') {
+                text.erase(i + 1, 1);
+            }
+        }
+        if (text.substr(i, 3) == "```") {
+            
+            flag++;
+            if (flag % 2 !=0) {
+                text.insert(i+3, "\n");
+            }
+            else{
+                text.insert(i, "\n");
+            }
         }
     }
+    text.insert(0, "# ");
+    
 
-    return newHtml;
-}
+        
+ }
+
+
+
 
 
 xmlNode* FindNodeWithClass(xmlNode* node, const char* className) {
@@ -63,6 +100,27 @@ xmlNode* FindNodeWithClass(xmlNode* node, const char* className) {
     return nullptr;
 }
 
+void template_html(std::string& htmlString) {
+    std::size_t pos = 0;
+
+    while ((pos = htmlString.find("<div class=\"section-title\">", pos)) != std::string::npos) {
+        pos += 25; // Длина строки "<div class=\"section-title\">"
+        pos = htmlString.find(">", pos);
+        if (pos != std::string::npos) {
+            htmlString.insert(pos + 1, "# ");
+        }
+    }
+
+    pos = 0;
+    while ((pos = htmlString.find("<div class=\"property-title\">", pos)) != std::string::npos) {
+        pos += 27; // Длина строки "<div class=\"property-title\">"
+        pos = htmlString.find("<", pos);
+        if (pos != std::string::npos) {
+            htmlString.insert(pos, ":");
+        }
+    }
+}
+
 json GetJson() {
     cpr::Response response = cpr::Get(cpr::Url{ "https://codeforces.com/api/problemset.problems" });
     if (response.status_code != 200) {
@@ -81,15 +139,14 @@ void parsing(const std::string& path_to_problems, const std::string& lang, json 
             std::string contestId = problem["contestId"].dump();
             std::string problemId = problem["index"].dump();
             problemId.erase(remove(problemId.begin(), problemId.end(), '\"'), problemId.end());
-            // TODO - Дать возможность пользователю изменить путь
             std::string folderPathproblem = folderPath + contestId + problemId;
             std::string filePath = folderPathproblem + "/" + contestId + problemId + ".md";
             // Проверка на существование папки
-            if (fs::exists(folderPathproblem)) {
+            if (fs::exists(filePath)) {
                 std::cout << "Folder for problem " << contestId << problemId << " already exists. Skipping." << std::endl;
                 continue;
             }
-            // Создание директории для задачи
+            
 
             // Формирование URL-адреса задачи
             std::string url = "https://codeforces.com/problemset/problem/" + contestId + "/" + problemId + "?locale=" + lang;
@@ -128,7 +185,22 @@ void parsing(const std::string& path_to_problems, const std::string& lang, json 
             html::parser p;
             html::node_ptr node = p.parse(statementText);
 
-            statementText = node->to_text();
+            statementText = node->to_html('  ');
+            template_html(statementText);
+          
+
+            
+            auto* options = new html2md::Options();
+            options->splitLines = false;
+            options->formatTable = false;
+            html2md::Converter c(statementText,options);
+            auto md = c.convert();
+            //processText(statementText);
+            processText(md);
+           
+            
+            
+
             fs::create_directories(folderPathproblem);
 
             // Запись текста в файл
@@ -138,7 +210,7 @@ void parsing(const std::string& path_to_problems, const std::string& lang, json 
                 continue;
             }
 
-            outputFile << statementText;
+            outputFile << md;
 
             outputFile.close();
 

@@ -9,6 +9,8 @@
 #include <libxml/HTMLparser.h>
 #include <filesystem>
 #include "html.hpp"
+#include <html2md.h>
+
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
@@ -20,4 +22,8 @@ xmlNode* FindNodeWithClass(xmlNode* node, const char* className);
 json GetJson();
 
 void parsing(const std::string& path_to_problems,const std::string& lang, json json_response);
+
+void processText(std::string& text);
+
+void template_html(std::string& htmlString);
 #endif
