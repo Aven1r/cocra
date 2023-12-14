@@ -408,3 +408,5 @@ FodyWeavers.xsd
 
 # Visual Studio Code files
 .vscode
+
+bin.dbg/
