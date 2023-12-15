@@ -12,7 +12,25 @@
 и сохранил в файле src/lib/parcer.cpp, а я просто дергал здесь их
 */
 
+#include <iostream>
+#include <string>
+#include "parser.hpp"
+
 int main() {
+    std::string input;
+    std::cout << "Enter a directory path: ";
+    std::getline(std::cin, input);
+
+    std::string language;
+    std::cout << "Enter a language code (ru/eng): ";
+    std::getline(std::cin, language);
+
+    std::int16_t count;
+    std::cout << "Enter a number of tasks (0 for all): ";
+    std::cin >> count;
+
     json json_response = GetJson();
-    parsing("C:/Users", "ru", json_response);
+    parsing(input, language, json_response, count);
+
+    return 0;
 }
