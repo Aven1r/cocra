@@ -21,7 +21,7 @@ xmlNode* FindNodeWithClass(xmlNode* node, const char* className);
 
 json GetJson();
 
-void parsing(const std::string& path_to_problems,const std::string& lang, json json_response);
+void parsing(const std::string& path_to_problems,const std::string& lang, json json_response, int numProblems);
 
 void processText(std::string& text);
 
