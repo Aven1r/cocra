@@ -410,3 +410,4 @@ FodyWeavers.xsd
 .vscode
 
 bin.dbg/
+CMakeSettings.json
