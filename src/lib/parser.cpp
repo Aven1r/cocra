@@ -133,7 +133,7 @@ void editString(std::string& aString)
         if (!line.empty())
         {
             size_t lastCharIndex = line.size() - 1;
-            if ((std::isupper(unsigned char(line.front())) && (line.back() == '.' || line.back() == ':' || line.back() == '!')) ||
+            if ((std::isupper(char(line.front())) && (line.back() == '.' || line.back() == ':' || line.back() == '!')) ||
                 (line.front() == '$') && (line.back() == '.' || line.back() == ':' || line.back() == '!'))
             {
                 if (!cap)
@@ -150,8 +150,8 @@ void editString(std::string& aString)
                 }
             }
 
-            if ((std::isdigit(unsigned char(line.front()))) && (line.back() == '.' || line.back() == ':' || line.back() == '!') &&
-                (!std::isdigit(unsigned char((char)ss.peek()))))
+            if ((std::isdigit(char(line.front()))) && (line.back() == '.' || line.back() == ':' || line.back() == '!') &&
+                (!std::isdigit(char((char)ss.peek()))))
             {
                 aString.insert(index + lastCharIndex + 1, "\n");
                 index++;
@@ -244,12 +244,11 @@ void parsing(const std::string& path_to_problems, const std::string& lang, json 
         std::string contestId = problem["contestId"].dump();
         std::string problemId = problem["index"].dump();
         std::string name = problem["name"].dump();
-        std::string rating = "";
-        if (problem.find("rating") == problem.end()) {
-            std::string rating = "0";
-        }
-        else {
-            std::string rating = problem["rating"].dump();
+        std::string rating;
+        if (problem.find("rating") != problem.end()) {
+            rating = problem["rating"].dump();
+        } else {
+            rating = "0"; // Default value
         }
         std::vector<std::string> tags = problem["tags"];
 
@@ -377,7 +376,7 @@ void addProblemtoMD(const std::string& currentTimestamp, const std::string& tag,
         std::cerr << "Failed to open problem file: " << problemFolderPath << std::endl;
     }
 
-    outputFile << "<div style=\"page-break-after: always;\"></div>"; // Add page break
+    outputFile << "<div style=\"page-break-after: always;\"></div>\n\n"; // Add page break
     outputFile.close();
 }
  
