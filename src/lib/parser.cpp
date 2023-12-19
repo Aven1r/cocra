@@ -9,11 +9,12 @@ std::string ExtractTextFromNode(xmlNode* node) {
         std::cerr << "Failed to create buffer" << std::endl;
         return html;
     }
-    xmlNodeDump(buffer, node->doc, node, 0, 0);
-
-    html = reinterpret_cast<char*>(buffer->content);
+    xmlNodeDump(buffer, node->doc, node, 0, 1);
 
 
+    html = (char*)(buffer->content);
+
+    // Format latex formula
     size_t found = html.find("$$$");
     while (found != std::string::npos) {
         html.replace(found, 3, "$");
@@ -21,7 +22,6 @@ std::string ExtractTextFromNode(xmlNode* node) {
     }
 
     xmlBufferFree(buffer);
-
 
     return html;
 }
@@ -31,16 +31,32 @@ void processText(std::string& text) {
     int flag = 0;
     size_t pos = 0;
     while ((pos = text.find('[', pos)) != std::string::npos) {
-        if (pos > 0 && text[pos - 1] != ' ' && text[pos-1]!='!' && text[pos-1]!='$') {
+        if (pos > 0 && text[pos - 1] != ' ' && text[pos - 1] != '!' && text[pos - 1] != '$') {
             text.insert(pos, " ");
             pos++;
         }
         pos++;
     }
-   
-    
-   
-    
+    bool foundExclamation = false;
+    bool removePipe = false;
+    size_t index = 0;
+
+    while (index < text.length()) {
+        if (text.substr(index, 3) == "![]") {
+            foundExclamation = true;
+        }
+        else if (foundExclamation && text[index] == ')') {
+            if (index + 1 < text.length() && text[index + 1] != '\n') {
+                text.insert(index + 1, "\n");
+                foundExclamation = false;
+            }
+        }
+        if (text[index] == '|' && ((text[index + 2] == '!' || text[index - 2] == ')') && text[index + 1] == '\n')) {
+            text.erase(index, 1);
+        }
+
+        ++index;
+    }
     for (size_t i = 0; i < text.length();++i) {
         if (text[i] == '$') {
             inLatex = !inLatex;
@@ -69,14 +85,7 @@ void processText(std::string& text) {
         }
     }
     text.insert(0, "# ");
-    
-
-        
  }
-
-
-
-
 
 xmlNode* FindNodeWithClass(xmlNode* node, const char* className) {
     if (node == nullptr) {
@@ -96,13 +105,73 @@ xmlNode* FindNodeWithClass(xmlNode* node, const char* className) {
             return foundNode;
         }
     }
-
     return nullptr;
 }
 
+
+void editString(std::string& aString)
+{
+    if (aString.size() == 0)
+        return;
+
+    std::regex emptyLineRegex("\\n\\s*\\n");
+
+    aString = std::regex_replace(aString, emptyLineRegex, "\n");
+
+
+    size_t capIndex = aString.find("\n");
+    aString.insert(capIndex, "\n");
+
+
+    std::stringstream ss(aString);
+    std::string line;
+    size_t index = 0;
+    bool cap = false;
+
+    while (std::getline(ss, line))
+    {
+        if (!line.empty())
+        {
+            size_t lastCharIndex = line.size() - 1;
+            if ((std::isupper(char(line.front())) && (line.back() == '.' || line.back() == ':' || line.back() == '!')) ||
+                (line.front() == '$') && (line.back() == '.' || line.back() == ':' || line.back() == '!'))
+            {
+                if (!cap)
+                {
+                    aString.insert(index, "\n");
+                    index++;
+                    cap = true;
+                }
+
+                if ((char)ss.peek() != '#' && (char)ss.peek() != '!' && (char)ss.peek())
+                {
+                    aString.insert(index + lastCharIndex + 1, "\n");
+                    index++;
+                }
+            }
+
+            if ((std::isdigit(char(line.front()))) && (line.back() == '.' || line.back() == ':' || line.back() == '!') &&
+                (!std::isdigit(char((char)ss.peek()))))
+            {
+                aString.insert(index + lastCharIndex + 1, "\n");
+                index++;
+            }
+
+            if ((line.front() == '-' && (line.back() == '.' || line.back() == ':' || line.back() == '!') && ((char)ss.peek() != '-')))
+            {
+                aString.insert(index + lastCharIndex + 1, "\n");
+                index++;
+            }
+
+        }
+        index += line.size() + 1;
+    }
+
+}
+
+
 void template_html(std::string& htmlString) {
     std::size_t pos = 0;
-
     while ((pos = htmlString.find("<div class=\"section-title\">", pos)) != std::string::npos) {
         pos += 25;
         pos = htmlString.find(">", pos);
@@ -116,9 +185,37 @@ void template_html(std::string& htmlString) {
         pos += 27;
         pos = htmlString.find("<", pos);
         if (pos != std::string::npos) {
-            htmlString.insert(pos, ":");
+            htmlString.insert(pos, ": ");
         }
     }
+}
+
+void createCSV(const std::string& filePath) {
+    std::ofstream csvFile(filePath, std::ios::app);
+    if (!csvFile.is_open()) {
+        std::cerr << "Failed to create CSV file: " << filePath << std::endl;
+        return;
+    }
+
+    // Check if the file is empty
+    csvFile.seekp(0, std::ios::end);
+    if (csvFile.tellp() == 0) {
+        csvFile << "name,rating,tags,folderpath\n";
+    }
+
+    csvFile.close();
+}
+
+void addProblemToCSV(const std::string& filePath, const std::string& name, int rating, const std::vector<std::string>& tags, const std::string& folderPath) {
+    std::ofstream csvFile(filePath, std::ios::app);
+    if (!csvFile.is_open()) {
+        std::cerr << "Failed to open CSV file: " << filePath << std::endl;
+        return;
+    }
+    for (const auto& tag : tags) {
+        csvFile << name << "," << rating << "," << tag << "," << folderPath << "\n";
+    }
+    csvFile.close();
 }
 
 json GetJson() {
@@ -127,25 +224,34 @@ json GetJson() {
         std::cerr << "Failed to retrieve problemset" << std::endl;
         return 1;
     }
-
     json json_response = json::parse(response.text);
     return json_response;
 }
+
 void parsing(const std::string& path_to_problems, const std::string& lang, json json_response, int numProblems) {
     std::string folderPath = path_to_problems + "/" + "problems/";
+    std::string csvFilePath = folderPath + "ParsedProblems.csv";
+
+    setlocale(LC_ALL, "Russian");
+
     int count = 0;
+    createCSV(csvFilePath);
+    
     for (const auto& problem : json_response["result"]["problems"]) {
         if (count >= numProblems and numProblems != 0) {
             break;
         }
         std::string contestId = problem["contestId"].dump();
         std::string problemId = problem["index"].dump();
+        std::string name = problem["name"].dump();
+        std::string rating = problem["rating"].dump();
+        std::vector<std::string> tags = problem["tags"];
+
         problemId.erase(remove(problemId.begin(), problemId.end(), '\"'), problemId.end());
         std::string folderPathproblem = folderPath + contestId + problemId;
         std::string filePath = folderPathproblem + "/" + contestId + problemId + ".md";
         if (fs::exists(filePath)) {
             std::cout << "Folder for problem " << contestId << problemId << " already exists. Skipping." << std::endl;
-            count--;
             continue;
         }
         
@@ -180,7 +286,7 @@ void parsing(const std::string& path_to_problems, const std::string& lang, json 
         html::parser p;
         html::node_ptr node = p.parse(statementText);
 
-        statementText = node->to_html('  ');
+        statementText = node->to_raw_html();
         template_html(statementText);
       
         auto* options = new html2md::Options();
@@ -190,6 +296,8 @@ void parsing(const std::string& path_to_problems, const std::string& lang, json 
         auto md = c.convert();
         //processText(statementText);
         processText(md);
+
+        editString(md);
         
         fs::create_directories(folderPathproblem);
 
@@ -204,10 +312,102 @@ void parsing(const std::string& path_to_problems, const std::string& lang, json 
         outputFile.close();
 
         std::cout << "Problem statement for " << contestId << problemId << " has been saved to " << filePath << std::endl;
+        addProblemToCSV(csvFilePath, name, std::stoi(rating), tags, filePath);
 
         xmlFreeDoc(doc);
         xmlCleanupParser();
 
         count++;
     }
+}
+
+std::string getCurrentTimeAsString() {
+    auto now = std::chrono::system_clock::now();
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&currentTime), "%Y%m%d_%H%M%S");
+
+    return ss.str();
+}
+
+ProblemSetGenerator::ProblemSetGenerator(std::string path_to_csv, std::string rating, std::string tag) {
+    this->pathToFolder_ = path_to_csv;
+
+    if (rating.find('-') != std::string::npos) {
+        // User provided a range of ratings
+        size_t dashPos = rating.find('-');
+
+        std::string lowestRatingStr = rating.substr(0, dashPos);
+        std::string highestRatingStr = rating.substr(dashPos + 1);
+
+        this->lowest_rating = lowestRatingStr;
+        this->highest_rating = highestRatingStr;
+    } else {
+        this->lowest_rating = rating;
+        this->highest_rating = this->lowest_rating;
+    }
+
+    this->tag_ = tag;
+}
+
+
+void addProblemtoMD(const std::string& currentTimestamp, const std::string& tag, const std::string& pathToFolder, const std::string& problemFolderPath) {
+    std::string problemSetFilePath = pathToFolder + "/" + tag + currentTimestamp + ".md";
+    std::ofstream outputFile(problemSetFilePath, std::ios::app);
+    if (!outputFile.is_open()) {
+        std::cerr << "Failed to open file for problem set" << std::endl;
+        return;
+    }
+
+    std::ifstream problemFile(problemFolderPath);
+    if (problemFile.is_open()) {
+        std::string line;
+        while (std::getline(problemFile, line)) {
+            outputFile << line << std::endl;
+        }
+        problemFile.close();
+    } else {
+        std::cerr << "Failed to open problem file: " << problemFolderPath << std::endl;
+    }
+
+    outputFile << "<div style=\"page-break-after: always;\"></div>"; // Add page break
+    outputFile.close();
+}
+ 
+void ProblemSetGenerator::generateProblemSet(){
+    std::string pathtocsv = this->pathToFolder_ + "/" + "ParsedProblems.csv";
+    std::ifstream csvFile(pathtocsv);
+    if (!csvFile.is_open()) {
+        std::cerr << "Failed to open CSV file: " << this->pathToFolder_ << std::endl;
+        return;
+    }
+
+    std::string currentTimestamp = getCurrentTimeAsString();
+
+    std::string line;
+    std::getline(csvFile, line); // Skip the first line
+
+    while (std::getline(csvFile, line)) {
+        std::stringstream lineStream(line);
+        std::string cell;
+
+        std::getline(lineStream, cell, ','); // Name
+        std::getline(lineStream, cell, ','); // Rating
+        int rating = std::stoi(cell);
+        std::getline(lineStream, cell, ','); // Tags
+        std::string tag = cell;
+        std::getline(lineStream, cell, ','); // Problem path
+        std::string problemPath = cell;
+
+        if (rating >= std::stoi(this->lowest_rating) && rating <= std::stoi(this->highest_rating)) {
+            if (tag == this->tag_) {
+                addProblemtoMD(currentTimestamp, tag, this->pathToFolder_, problemPath);
+            }
+        }
+    }
+    std::string setFilePath = this->tag_ + currentTimestamp + ".md";
+    std::cout << "Problem set " << setFilePath << " has been saved" << std::endl;
+
+    csvFile.close();
 }
