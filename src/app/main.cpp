@@ -11,26 +11,27 @@
 Здесь пока можно играться с парсингом задач, но по итогу хотелось бы, чтобы ты обернул все красиво в функции
 и сохранил в файле src/lib/parcer.cpp, а я просто дергал здесь их
 */
-
-#include <iostream>
-#include <string>
-#include "parser.hpp"
-
-int main() {
+class Args {
+public:
     std::string input;
-    std::cout << "Enter a directory path: ";
-    std::getline(std::cin, input);
+    std::string language; 
+    int count;
+    void parse(int argc, char* argv[]);
+    
+};
 
-    std::string language;
-    std::cout << "Enter a language code (ru/eng): ";
-    std::getline(std::cin, language);
+void Args::parse(int argc, char* argv[]) {
+    if(argc > 1) input = argv[1];
+    if(argc > 2) language = argv[2];
+    if(argc > 3) count = atoi(argv[3]);
+}
 
-    std::int16_t count;
-    std::cout << "Enter a number of tasks (0 for all): ";
-    std::cin >> count;
+int main(int argc, char* argv[]) {
+    Args args;
+    args.parse(argc, argv);
 
     json json_response = GetJson();
-    parsing(input, language, json_response, count);
+    parsing(args.input, args.language, json_response, args.count);
 
     return 0;
 }
