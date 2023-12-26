@@ -25,9 +25,8 @@ std::string ExtractTextFromNode(xmlNode* node);
 
 xmlNode* FindNodeWithClass(xmlNode* node, const char* className);
 
-json GetJson();
 
-void parsing(const std::string& path_to_problems,const std::string& lang, json json_response,int numProblems);
+void parsing(const std::string& path_to_problems,const std::string& lang, int numProblems, int timeDelay=1);
 
 void processText(std::string& text);
 
@@ -35,6 +34,7 @@ void template_html(std::string& htmlString);
 
 void editString(std::string& aString);
 
+void logMessage(const std::string& logFilePath, const std::string& message);
 
 class ProblemSetGenerator {
     private:

@@ -22,7 +22,6 @@ int main(int argc, char* argv[]) {
     Args args;
     args.parse(argc, argv);
 
-    json json_response = GetJson();
     
     ProblemSetGenerator problemSetGenerator(args.pathToFolder, args.ratings, args.tag);
     problemSetGenerator.generateProblemSet();

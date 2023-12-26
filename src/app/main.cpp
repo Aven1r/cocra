@@ -22,8 +22,8 @@ int main(int argc, char* argv[]) {
     Args args;
     args.parse(argc, argv);
 
-    json json_response = GetJson();
-    parsing(args.input, args.language, json_response, args.count);
+
+    parsing(args.input, args.language,args.count);
 
     return 0;
 }
