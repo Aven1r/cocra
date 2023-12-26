@@ -133,8 +133,8 @@ void editString(std::string& aString)
         if (!line.empty())
         {
             size_t lastCharIndex = line.size() - 1;
-            if ((std::isupper(char(line.front())) && (line.back() == '.' || line.back() == ':' || line.back() == '!')) ||
-                (line.front() == '$') && (line.back() == '.' || line.back() == ':' || line.back() == '!'))
+            if ((std::isupper(char(line.front())) && (line.back() == '.' || line.back() == ':' || line.back() == '!' || line.back() == '?')) ||
+                (line.front() == '$') && (line.back() == '.' || line.back() == ':' || line.back() == '!' || line.back() == '?'))
             {
                 if (!cap)
                 {
@@ -150,14 +150,14 @@ void editString(std::string& aString)
                 }
             }
 
-            if ((std::isdigit(char(line.front()))) && (line.back() == '.' || line.back() == ':' || line.back() == '!') &&
+            if ((std::isdigit(char(line.front()))) && (line.back() == '.' || line.back() == ':' || line.back() == '!' || line.back() == '?') &&
                 (!std::isdigit(char((char)ss.peek()))))
             {
                 aString.insert(index + lastCharIndex + 1, "\n");
                 index++;
             }
 
-            if ((line.front() == '-' && (line.back() == '.' || line.back() == ':' || line.back() == '!') && ((char)ss.peek() != '-')))
+            if ((line.front() == '-' && (line.back() == '.' || line.back() == ':' || line.back() == '!' || line.back() == '?') && ((char)ss.peek() != '-')))
             {
                 aString.insert(index + lastCharIndex + 1, "\n");
                 index++;
@@ -198,7 +198,7 @@ void logMessage(const std::string& logFilePath, const std::string& message) {
         logFile.close();
     }
     else {
-        std::cerr << "Failed to opáen log file." << std::endl;
+        std::cerr << "Failed to opÃ¡en log file." << std::endl;
     }
 }
 
