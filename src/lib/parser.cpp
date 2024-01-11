@@ -1,5 +1,15 @@
 #include "parser.hpp"
+#include "csv.hpp"
 
+std::string getCurrentTimeAsString() {
+    auto now = std::chrono::system_clock::now();
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&currentTime), "%Y%m%d_%H%M%S");
+
+    return ss.str();
+}
 
 std::string ExtractTextFromNode(xmlNode* node) {
     std::string html;
@@ -198,48 +208,23 @@ void logMessage(const std::string& logFilePath, const std::string& message) {
         logFile.close();
     }
     else {
-        std::cerr << "Failed to opáen log file." << std::endl;
+        std::cerr << "Failed to open log file." << std::endl;
     }
 }
-
-void createCSV(const std::string& filePath) {
-    std::ofstream csvFile(filePath, std::ios::app);
-    if (!csvFile.is_open()) {
-        std::cerr << "Failed to create CSV file: " << filePath << std::endl;
-        return;
-    }
-
-    // Check if the file is empty
-    csvFile.seekp(0, std::ios::end);
-    if (csvFile.tellp() == 0) {
-        csvFile << "name,rating,tags,folderpath\n";
-    }
-
-    csvFile.close();
-}
-
-void addProblemToCSV(const std::string& filePath, const std::string& name, int rating, const std::vector<std::string>& tags, const std::string& folderPath) {
-    std::ofstream csvFile(filePath, std::ios::app);
-    if (!csvFile.is_open()) {
-        std::cerr << "Failed to open CSV file: " << filePath << std::endl;
-        return;
-    }
-    for (const auto& tag : tags) {
-        csvFile << name << "," << rating << "," << tag << "," << folderPath << "\n";
-    }
-    csvFile.close();
-}
-
 
 
 void parsing(const std::string& path_to_problems, const std::string& lang, int numProblems, int timeDelay) {
     std::string folderPath = path_to_problems + "/" + "problems/";
     std::string csvFilePath = folderPath + "ParsedProblems.csv";
-    std::string logFilePath = folderPath + "log.txt";
+
+    std::string currentTimeStamp = getCurrentTimeAsString();
+    std::string logFilePath = folderPath + "logs/" + "log" + currentTimeStamp + ".txt";
+
     if (std::ifstream(logFilePath)) {
         std::remove(logFilePath.c_str());
     }
     fs::create_directories(folderPath);
+    fs::create_directories(folderPath + "logs/");
     std::ofstream logFile(logFilePath);
     cpr::Response response = cpr::Get(cpr::Url{ "https://codeforces.com/api/problemset.problems" });
     if (response.status_code != 200) {
@@ -341,95 +326,4 @@ void parsing(const std::string& path_to_problems, const std::string& lang, int n
 
         count++;
     }
-}
-
-std::string getCurrentTimeAsString() {
-    auto now = std::chrono::system_clock::now();
-    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
-
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&currentTime), "%Y%m%d_%H%M%S");
-
-    return ss.str();
-}
-
-ProblemSetGenerator::ProblemSetGenerator(std::string path_to_csv, std::string rating, std::string tag) {
-    this->pathToFolder_ = path_to_csv;
-
-    if (rating.find('-') != std::string::npos) {
-        // User provided a range of ratings
-        size_t dashPos = rating.find('-');
-
-        std::string lowestRatingStr = rating.substr(0, dashPos);
-        std::string highestRatingStr = rating.substr(dashPos + 1);
-
-        this->lowest_rating = lowestRatingStr;
-        this->highest_rating = highestRatingStr;
-    } else {
-        this->lowest_rating = rating;
-        this->highest_rating = this->lowest_rating;
-    }
-
-    this->tag_ = tag;
-}
-
-
-void addProblemtoMD(const std::string& currentTimestamp, const std::string& tag, const std::string& pathToFolder, const std::string& problemFolderPath) {
-    std::string problemSetFilePath = pathToFolder + "/" + tag + currentTimestamp + ".md";
-    std::ofstream outputFile(problemSetFilePath, std::ios::app);
-    if (!outputFile.is_open()) {
-        std::cerr << "Failed to open file for problem set" << std::endl;
-        return;
-    }
-
-    std::ifstream problemFile(problemFolderPath);
-    if (problemFile.is_open()) {
-        std::string line;
-        while (std::getline(problemFile, line)) {
-            outputFile << line << std::endl;
-        }
-        problemFile.close();
-    } else {
-        std::cerr << "Failed to open problem file: " << problemFolderPath << std::endl;
-    }
-
-    outputFile << "<div style=\"page-break-after: always;\"></div>\n\n"; // Add page break
-    outputFile.close();
-}
- 
-void ProblemSetGenerator::generateProblemSet(){
-    std::string pathtocsv = this->pathToFolder_ + "/" + "ParsedProblems.csv";
-    std::ifstream csvFile(pathtocsv);
-    if (!csvFile.is_open()) {
-        std::cerr << "Failed to open CSV file: " << this->pathToFolder_ << std::endl;
-        return;
-    }
-
-    std::string currentTimestamp = getCurrentTimeAsString();
-
-    std::string line;
-    std::getline(csvFile, line); // Skip the first line
-
-    while (std::getline(csvFile, line)) {
-        std::stringstream lineStream(line);
-        std::string cell;
-
-        std::getline(lineStream, cell, ','); // Name
-        std::getline(lineStream, cell, ','); // Rating
-        int rating = std::stoi(cell);
-        std::getline(lineStream, cell, ','); // Tags
-        std::string tag = cell;
-        std::getline(lineStream, cell, ','); // Problem path
-        std::string problemPath = cell;
-
-        if (rating >= std::stoi(this->lowest_rating) && rating <= std::stoi(this->highest_rating)) {
-            if (tag == this->tag_) {
-                addProblemtoMD(currentTimestamp, tag, this->pathToFolder_, problemPath);
-            }
-        }
-    }
-    std::string setFilePath = this->tag_ + currentTimestamp + ".md";
-    std::cout << "Problem set " << setFilePath << " has been saved" << std::endl;
-
-    csvFile.close();
 }

@@ -36,24 +36,5 @@ void editString(std::string& aString);
 
 void logMessage(const std::string& logFilePath, const std::string& message);
 
-class ProblemSetGenerator {
-    private:
-    std::string pathToFolder_;
-    std::string lowest_rating;
-    std::string highest_rating;
-    std::string tag_;
-
-    public:
-    /**
-     * @brief Construct a new Problem Set Generator object
-     * 
-     * @param pathToFolder 
-     * @param ratings 
-     * @param tag 
-     */
-    ProblemSetGenerator(std::string pathToFolder, std::string ratings, std::string tag);
-
-    void generateProblemSet();
-};
 
 #endif
