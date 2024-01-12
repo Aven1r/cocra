@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(cocra_parser CXX)
 
-add_library(${PROJECT_NAME} parser.cpp parser.hpp)
+add_library(${PROJECT_NAME} parser.cpp parser.hpp generator.cpp generator.hpp csv.hpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC CURL::libcurl)
 target_link_libraries(${PROJECT_NAME} PUBLIC cpr::cpr)
 target_link_libraries(${PROJECT_NAME} PUBLIC LibXml2::LibXml2)
